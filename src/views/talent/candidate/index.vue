@@ -99,7 +99,7 @@
               <el-input-tag v-model="form.industry" :tag-props="{ type: 'primary' }" placeholder="请输入内容" />
             </el-col>
             <el-col :span="6">
-              <el-button type="primary" @click="openPostDialog" :icon="Search" />
+              <el-button type="primary" @click="openIndustryDialog" :icon="Search" />
             </el-col>
           </el-row>
         </el-form-item>
@@ -135,6 +135,8 @@
     </el-dialog>
     <!-- 职位选择弹窗组件 -->
     <PostSelect ref="postDialog" :max-selection="3" :post-data="postData" @confirm="handlePostConfirm" />
+    <!-- 使用行业选择组件 -->
+    <IndustrySelect v-model="selectedIndustries" :max-selection="3" @confirm="handleIndustryConfirm" />
   </div>
 </template>
 
@@ -338,6 +340,43 @@ const handlePostConfirm = (selectedIds) => {
   // 遍历selectedPostNames，提取name作为数组
   form.value.post = selectedPostNames.value.map(post => post.name)
 }
+
+import IndustrySelect from '@/components/IndustrySelect'
+
+const industryDialog = ref(null)
+
+// 行业数据（可以从后端API获取）
+const industryData = ref([])
+
+// 已选行业ID列表
+const selectedIndustries = ref([])
+
+// 已选行业名称列表（用于显示）
+const selectedIndustryNames = computed(() => {
+  return selectedIndustries.value.map(id => {
+    for (const category of industryData) {
+      const industry = category.industries.find(i => i.id === id)
+      if (industry) return { id: industry.id, name: industry.name }
+    }
+    return null
+  }).filter(Boolean)
+})
+
+// 打开职位选择对话框
+const openIndustryDialog = () => {
+  // if (industryData.value.length === 0) {
+  //   getAllPosts().then(response => {
+  //     industryData.value = response.data
+  //   })
+  // }
+  industryDialog.value.open(selectedIndustries.value)
+}
+
+// 处理行业选择确认事件
+const handleIndustryConfirm = (selectedIds) => {
+  console.log('确认选择的行业ID:', selectedIds)
+  // 这里可以添加其他逻辑，如保存到后端等
+}
 </script>
 <style scoped>
 .post-input-container {
@@ -354,5 +393,12 @@ const handlePostConfirm = (selectedIds) => {
 
 .post-button {
   flex-shrink: 0;
+}
+
+.selected-industries {
+  margin-top: 10px;
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 4px;
 }
 </style>

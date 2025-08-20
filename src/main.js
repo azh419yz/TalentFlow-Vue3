@@ -45,6 +45,8 @@ import ImagePreview from "@/components/ImagePreview"
 import DictTag from '@/components/DictTag'
 // 职位选择组件
 import PostSelect from '@/components/PostSelect'
+// 行业选择组件
+import IndustrySelect from '@/components/IndustrySelect'
 
 const app = createApp(App)
 
@@ -68,6 +70,7 @@ app.component('ImagePreview', ImagePreview)
 app.component('RightToolbar', RightToolbar)
 app.component('Editor', Editor)
 app.component('PostSelect', PostSelect)
+app.component('IndustrySelect', IndustrySelect)
 
 app.use(router)
 app.use(store)

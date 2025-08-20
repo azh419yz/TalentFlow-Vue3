@@ -56,7 +56,7 @@
         </template>
       </el-table-column>
       <el-table-column label="期望年薪" align="center" prop="expectedSalary" />
-      <el-table-column label="行业" align="center" prop="industry" />
+      industry: [],
       <el-table-column label="职位" align="center" prop="post" />
       <el-table-column label="专业技能" align="center" prop="skillTags" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -136,7 +136,8 @@
     <!-- 职位选择弹窗组件 -->
     <PostSelect ref="postDialog" :max-selection="3" :post-data="postData" @confirm="handlePostConfirm" />
     <!-- 使用行业选择组件 -->
-    <IndustrySelect v-model="selectedIndustries" :max-selection="3" @confirm="handleIndustryConfirm" />
+    <IndustrySelect ref="industryDialog" :max-selection="3" :industry-data="industryData"
+      @confirm="handleIndustryConfirm" />
   </div>
 </template>
 
@@ -174,7 +175,7 @@ const data = reactive({
   },
   rules: {
     name: [
-      { required: true, message: "$comment不能为空", trigger: "blur" }
+      { required: true, message: "候选人姓名不能为空", trigger: "blur" }
     ],
     phoneNumber: [
       { required: true, message: "手机号码不能为空", trigger: "blur" }
@@ -354,9 +355,9 @@ const selectedIndustries = ref([])
 // 已选行业名称列表（用于显示）
 const selectedIndustryNames = computed(() => {
   return selectedIndustries.value.map(id => {
-    for (const category of industryData) {
+    for (const category of industryData.value) {
       const industry = category.industries.find(i => i.id === id)
-      if (industry) return { id: industry.id, name: industry.name }
+      if (industry) return industry
     }
     return null
   }).filter(Boolean)
@@ -364,41 +365,149 @@ const selectedIndustryNames = computed(() => {
 
 // 打开职位选择对话框
 const openIndustryDialog = () => {
-  // if (industryData.value.length === 0) {
-  //   getAllPosts().then(response => {
-  //     industryData.value = response.data
-  //   })
-  // }
+  if (industryData.value.length === 0) {
+    // getAllPosts().then(response => {
+    //   industryData.value = response.data
+    // })
+    industryData.value = [
+      {
+        id: 1,
+        name: '全部行业',
+        industries: [
+          { id: 101, name: '全部行业' }
+        ]
+      },
+      {
+        id: 2,
+        name: 'IT/互联网/游戏',
+        industries: [
+          { id: 201, name: '互联网' },
+          { id: 202, name: '计算机软件' },
+          { id: 203, name: '在线教育' },
+          { id: 204, name: '网络/信息安全' },
+          { id: 205, name: 'IT服务' },
+          { id: 206, name: '游戏' },
+          { id: 207, name: '电子商务' },
+          { id: 208, name: '云计算/大数据' },
+          { id: 209, name: '在线社交/媒体' }
+        ]
+      },
+      {
+        id: 3,
+        name: '电子/通信/半导体',
+        industries: [
+          { id: 301, name: '电子技术' },
+          { id: 302, name: '半导体' },
+          { id: 303, name: '集成电路' },
+          { id: 304, name: '通信设备' },
+          { id: 305, name: '5G技术' }
+        ]
+      },
+      {
+        id: 4,
+        name: '房地产/建筑',
+        industries: [
+          { id: 401, name: '房地产开发' },
+          { id: 402, name: '建筑设计' },
+          { id: 403, name: '建筑施工' },
+          { id: 404, name: '物业管理' },
+          { id: 405, name: '装修装饰' }
+        ]
+      },
+      {
+        id: 5,
+        name: '金融',
+        industries: [
+          { id: 501, name: '银行' },
+          { id: 502, name: '保险' },
+          { id: 503, name: '基金/证券/期货' },
+          { id: 504, name: '投资管理' },
+          { id: 505, name: '金融科技' },
+          { id: 506, name: '信托' },
+          { id: 507, name: '融资租赁' }
+        ]
+      },
+      {
+        id: 6,
+        name: '消费品',
+        industries: [
+          { id: 601, name: '食品饮料' },
+          { id: 602, name: '服装纺织' },
+          { id: 603, name: '家居用品' },
+          { id: 604, name: '美妆个护' },
+          { id: 605, name: '珠宝首饰' }
+        ]
+      },
+      {
+        id: 7,
+        name: '医疗健康',
+        industries: [
+          { id: 701, name: '医药制造' },
+          { id: 702, name: '医疗器械' },
+          { id: 703, name: '医疗服务' },
+          { id: 704, name: '健康管理' },
+          { id: 705, name: '生物技术' }
+        ]
+      },
+      {
+        id: 8,
+        name: '汽车',
+        industries: [
+          { id: 801, name: '汽车制造' },
+          { id: 802, name: '新能源汽车' },
+          { id: 803, name: '汽车零部件' },
+          { id: 804, name: '汽车销售' },
+          { id: 805, name: '汽车服务' }
+        ]
+      },
+      {
+        id: 9,
+        name: '机械/制造',
+        industries: [
+          { id: 901, name: '机械制造' },
+          { id: 902, name: '工业自动化' },
+          { id: 903, name: '智能制造' },
+          { id: 904, name: '仪器仪表' },
+          { id: 905, name: '金属加工' }
+        ]
+      },
+      {
+        id: 10,
+        name: '教育培训/科研',
+        industries: [
+          { id: 1001, name: 'K12教育' },
+          { id: 1002, name: '高等教育' },
+          { id: 1003, name: '职业教育' },
+          { id: 1004, name: '语言培训' },
+          { id: 1005, name: '科研机构' }
+        ]
+      },
+      {
+        id: 11,
+        name: '专业服务',
+        industries: [
+          { id: 1101, name: '法律咨询' },
+          { id: 1102, name: '会计审计' },
+          { id: 1103, name: '管理咨询' },
+          { id: 1104, name: '人力资源' },
+          { id: 1105, name: '广告营销' }
+        ]
+      }
+    ]
+  }
   industryDialog.value.open(selectedIndustries.value)
 }
 
 // 处理行业选择确认事件
 const handleIndustryConfirm = (selectedIds) => {
-  console.log('确认选择的行业ID:', selectedIds)
+  console.log(selectedIds);
+  
+  selectedIndustries.value = selectedIds
   // 这里可以添加其他逻辑，如保存到后端等
+  // 遍历selectedIndustryNames，提取name作为数组
+  console.log(selectedIndustryNames.value);
+  
+  form.value.industry = selectedIndustryNames.value.map(industry => industry.name)
 }
 </script>
-<style scoped>
-.post-input-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.post-input-tag {
-  flex: 1;
-  max-width: calc(100% - 100px);
-  /* 根据按钮宽度调整 */
-}
-
-.post-button {
-  flex-shrink: 0;
-}
-
-.selected-industries {
-  margin-top: 10px;
-  padding: 15px;
-  background-color: #f8f8f8;
-  border-radius: 4px;
-}
-</style>
+<style scoped></style>

@@ -3,7 +3,7 @@
     class="post-select-dialog">
     <!-- 顶部控制区 -->
     <div class="dialog-header">
-      <el-icon @click="handleClose" style="cursor: pointer;"/>
+      <el-icon @click="handleClose" style="cursor: pointer;" />
     </div>
 
     <!-- 搜索区域 -->
@@ -31,8 +31,7 @@
         <div v-for="group in currentGroups" :key="group.id" class="post-group">
           <div class="group-title">{{ group.name }}</div>
           <div class="post-tags">
-            <div v-for="post in group.posts" :key="post.id"
-              :class="['post-tag', { selected: isPostSelected(post.id) }]"
+            <div v-for="post in group.posts" :key="post.id" :class="['post-tag', { selected: isPostSelected(post.id) }]"
               @click="togglePostSelection(post)">
               {{ post.name }}
             </div>
@@ -61,7 +60,6 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({

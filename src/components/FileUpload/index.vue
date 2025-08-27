@@ -1,21 +1,8 @@
 <template>
   <div class="upload-file">
-    <el-upload
-      multiple
-      :action="uploadFileUrl"
-      :before-upload="handleBeforeUpload"
-      :file-list="fileList"
-      :data="data"
-      :limit="limit"
-      :on-error="handleUploadError"
-      :on-exceed="handleExceed"
-      :on-success="handleUploadSuccess"
-      :show-file-list="false"
-      :headers="headers"
-      class="upload-file-uploader"
-      ref="fileUpload"
-      v-if="!disabled"
-    >
+    <el-upload multiple :action="uploadFileUrl" :before-upload="handleBeforeUpload" :file-list="fileList" :data="data"
+      :limit="limit" :on-error="handleUploadError" :on-exceed="handleExceed" :on-success="handleUploadSuccess"
+      :show-file-list="false" :headers="headers" class="upload-file-uploader" ref="fileUpload" v-if="!disabled">
       <!-- 上传按钮 -->
       <el-button type="primary">选取文件</el-button>
     </el-upload>
@@ -27,13 +14,14 @@
       的文件
     </div>
     <!-- 文件列表 -->
-    <transition-group ref="uploadFileList" class="upload-file-list el-upload-list el-upload-list--text" name="el-fade-in-linear" tag="ul">
+    <transition-group ref="uploadFileList" class="upload-file-list el-upload-list el-upload-list--text"
+      name="el-fade-in-linear" tag="ul">
       <li :key="file.uid" class="el-upload-list__item ele-upload-list__item-content" v-for="(file, index) in fileList">
-        <el-link :href="`${baseUrl}${file.url}`" :underline="false" target="_blank">
+        <el-link :href="`${file.url}`" underline="never" target="_blank">
           <span class="el-icon-document"> {{ getFileName(file.name) }} </span>
         </el-link>
         <div class="ele-upload-list__item-content-action">
-          <el-link :underline="false" @click="handleDelete(index)" type="danger" v-if="!disabled">&nbsp;删除</el-link>
+          <el-link underline="never" @click="handleDelete(index)" type="danger" v-if="!disabled">&nbsp;删除</el-link>
         </div>
       </li>
     </transition-group>
@@ -42,6 +30,7 @@
 
 <script setup>
 import { getToken } from "@/utils/auth"
+import { deleteFile } from "@/api/tool/file"
 import Sortable from 'sortablejs'
 
 const props = defineProps({
@@ -49,7 +38,7 @@ const props = defineProps({
   // 上传接口地址
   action: {
     type: String,
-    default: "/common/upload"
+    default: "/file/upload"
   },
   // 上传携带的参数
   data: {
@@ -116,7 +105,7 @@ watch(() => props.modelValue, val => {
     fileList.value = []
     return []
   }
-},{ deep: true, immediate: true })
+}, { deep: true, immediate: true })
 
 // 上传前校检格式和大小
 function handleBeforeUpload(file) {
@@ -162,7 +151,7 @@ function handleUploadError(err) {
 // 上传成功回调
 function handleUploadSuccess(res, file) {
   if (res.code === 200) {
-    uploadList.value.push({ name: res.fileName, url: res.fileName })
+    uploadList.value.push({ name: res.data.name, url: res.data.url })
     uploadedSuccessfully()
   } else {
     number.value--
@@ -175,8 +164,14 @@ function handleUploadSuccess(res, file) {
 
 // 删除文件
 function handleDelete(index) {
-  fileList.value.splice(index, 1)
-  emit("update:modelValue", listToString(fileList.value))
+  deleteFile(fileList.value[index].url, props.data.storageType).then(res => {
+    if (res.code === 200) {
+      fileList.value.splice(index, 1)
+      emit("update:modelValue", fileList.value)
+    } else {
+      proxy.$modal.msgError(res.msg)
+    }
+  })
 }
 
 // 上传结束处理
@@ -185,7 +180,7 @@ function uploadedSuccessfully() {
     fileList.value = fileList.value.filter(f => f.url !== undefined).concat(uploadList.value)
     uploadList.value = []
     number.value = 0
-    emit("update:modelValue", listToString(fileList.value))
+    emit("update:modelValue", fileList.value)
     proxy.$modal.closeLoading()
   }
 }
@@ -222,7 +217,7 @@ onMounted(() => {
         onEnd: (evt) => {
           const movedItem = fileList.value.splice(evt.oldIndex, 1)[0]
           fileList.value.splice(evt.newIndex, 0, movedItem)
-          emit('update:modelValue', listToString(fileList.value))
+          emit('update:modelValue', fileList.value)
         }
       })
     })
@@ -234,9 +229,11 @@ onMounted(() => {
   opacity: 0.5;
   background: #c8ebfb;
 }
+
 .upload-file-uploader {
   margin-bottom: 5px;
 }
+
 .upload-file-list .el-upload-list__item {
   border: 1px solid #e4e7ed;
   line-height: 2;
@@ -244,12 +241,14 @@ onMounted(() => {
   position: relative;
   transition: none !important;
 }
+
 .upload-file-list .ele-upload-list__item-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: inherit;
 }
+
 .ele-upload-list__item-content-action .el-link {
   margin-right: 10px;
 }

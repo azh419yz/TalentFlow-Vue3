@@ -1,22 +1,29 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="70px">
       <el-form-item label="候选人" prop="name">
-        <el-input v-model="queryParams.name" placeholder="请输入候选人姓名" clearable @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.name" placeholder="输入候选人姓名" style="width: 120px" clearable
+          @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="手机号码" prop="phoneNumber">
-        <el-input v-model="queryParams.phoneNumber" placeholder="请输入手机号码" clearable @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.phoneNumber" placeholder="请输入手机号码" style="width: 130px" clearable
+          @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="邮箱" prop="email">
         <el-input v-model="queryParams.email" placeholder="请输入用户邮箱" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="学历" prop="highestEdu">
-        <el-select v-model="queryParams.highestEdu" placeholder="请选择学历" clearable style="width: 120px">
+        <el-select v-model="queryParams.highestEdu" placeholder="请选择学历" clearable style="width: 100px">
           <el-option v-for="dict in education" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="期望年薪" prop="expectedSalary">
-        <el-input v-model="queryParams.expectedSalary" placeholder="请输入期望年薪" clearable @keyup.enter="handleQuery" />
+        <el-input-number v-model="queryParams.params.expectedSalaryStart" :min="0" :precision="0" style="width: 100px"
+          @change="handleSalaryStartChange" />
+        <el-text class="mx-1" type="warning"> ～ </el-text>
+        <el-input-number v-model="queryParams.params.expectedSalaryEnd" :min="0" :precision="0" style="width: 100px"
+          @change="handleSalaryEndChange" />
+        <el-text class="mx-1" type="warning">（万元 / 年）</el-text>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -26,45 +33,60 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd"
-          v-hasPermi="['system:candidate:add']">新增</el-button>
+        <el-button type="primary" plain icon="Plus" @click="handleAdd">新增</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
-          v-hasPermi="['system:candidate:edit']">修改</el-button>
+        <el-button type="success" plain icon="Upload" :disabled="single" @click="handleUpdate">简历解析</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
-          v-hasPermi="['system:candidate:remove']">删除</el-button>
+        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete">删除</el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button type="warning" plain icon="Download" @click="handleExport"
-          v-hasPermi="['system:candidate:export']">导出</el-button>
+        <el-button type="warning" plain icon="Download" @click="handleExport">导出</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="candidateList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="100" align="center" />
-      <el-table-column label="id" type="index" align="center" />
-      <el-table-column label="候选人姓名" align="center" prop="name" />
+      <el-table-column type="selection" width="50" align="center" />
+      <el-table-column label="候选人姓名" width="100" align="center" prop="name" />
       <el-table-column label="手机号码" align="center" prop="phoneNumber" />
-      <el-table-column label="用户邮箱" align="center" prop="email" />
+      <!-- <el-table-column label="用户邮箱" align="center" prop="email" /> -->
       <el-table-column label="学历" align="center" prop="highestEdu">
         <template #default="scope">
-          <dict-tag :options="education" :value="scope.row.highestEdu" />
+          <el-tag><dict-tag :options="education" :value="scope.row.highestEdu" /></el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="期望年薪" align="center" prop="expectedSalary" />
-      industry: [],
-      <el-table-column label="职位" align="center" prop="post" />
-      <el-table-column label="专业技能" align="center" prop="skillTags" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="期望年薪" align="center" prop="expectedSalary">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:candidate:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
-            v-hasPermi="['system:candidate:remove']">删除</el-button>
+          <el-text class="mx-1" type="warning">{{ scope.row.expectedSalary }} 万元 </el-text>
+        </template>
+      </el-table-column>
+      <el-table-column label="行业" align="center">
+        <template #default="scope">
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <el-tag v-for="(item, index) in scope.row.industryList" :key="index" type="primary">
+              {{ item }}
+            </el-tag>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="职位" align="center">
+        <template #default="scope">
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <el-tag v-for="(item, index) in scope.row.postList" :key="index" type="primary">
+              {{ item }}
+            </el-tag>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="专业技能" align="center" prop="skillTags" />
+      <el-table-column label="更新时间" align="center" prop="updateTime" />
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+        <template #default="scope">
+          <el-button link type="primary" icon="Upload" @click="handleUpload(scope.row)">简历</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -91,12 +113,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="期望年薪" prop="expectedSalary">
-          <el-input-number v-model="form.expectedSalary" :min="0" :precision="0" /> 万元
+          <el-input-number v-model="form.expectedSalary" :min="1" :max="9999" :precision="0" />
+          <el-text class="mx-1" type="warning">（万元 / 年）</el-text>
         </el-form-item>
         <el-form-item label="行业" prop="industry">
           <el-row :gutter="10" align="middle">
             <el-col :span="18">
-              <el-input-tag v-model="form.industry" :tag-props="{ type: 'primary' }" placeholder="请输入内容" />
+              <el-input-tag v-model="form.industryList" :tag-props="{ type: 'primary' }" placeholder="请输入内容" />
             </el-col>
             <el-col :span="6">
               <el-button type="primary" @click="openIndustryDialog" :icon="Search" />
@@ -106,7 +129,7 @@
         <el-form-item label="职位" prop="post">
           <el-row :gutter="10" align="middle">
             <el-col :span="18">
-              <el-input-tag v-model="form.post" :tag-props="{ type: 'primary' }" placeholder="请输入内容" />
+              <el-input-tag v-model="form.postList" :tag-props="{ type: 'primary' }" placeholder="请输入内容" />
             </el-col>
             <el-col :span="6">
               <el-button type="primary" @click="openPostDialog" :icon="Search" />
@@ -133,24 +156,83 @@
         </div>
       </template>
     </el-dialog>
+    <!-- 上传简历对话框 -->
+    <el-dialog :title="title" v-model="resumeOpen" width="800px" append-to-body>
+      <FileUpload ref="fileUpload" v-model="fileList" :limit="1" :data="{ storageType: fileStorage }"
+        :isShowTip="true" />
+
+      <!-- 文件预览区域 -->
+      <div v-if="fileList.length > 0" class="file-preview-container">
+        <el-divider content-position="left">文件预览</el-divider>
+        <div class="file-preview-item">
+          <div class="file-info">
+            <el-icon class="file-icon">
+              <Document />
+            </el-icon>
+            <div class="file-details">
+              <div class="file-name">{{ getFileName(fileList[0].name) }}</div>
+            </div>
+          </div>
+          <div class="file-actions">
+            <el-button type="primary" link @click="handlePreviewFile(fileList[0])">
+              <el-icon>
+                <View />
+              </el-icon>
+              预览
+            </el-button>
+            <el-button type="primary" link @click="handleDownloadFile(fileList[0])">
+              <el-icon>
+                <Download />
+              </el-icon>
+              下载
+            </el-button>
+          </div>
+        </div>
+
+        <!-- iframe预览区域 -->
+        <div v-if="previewUrl" class="iframe-preview-container">
+          <el-divider content-position="left">在线预览</el-divider>
+          <div class="iframe-wrapper">
+            <iframe :src="previewUrl" width="100%" height="500px" frameborder="0" class="preview-iframe">
+            </iframe>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="updateResume">确 定</el-button>
+          <el-button @click="cancel">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
     <!-- 职位选择弹窗组件 -->
     <PostSelect ref="postDialog" :max-selection="3" :post-data="postData" @confirm="handlePostConfirm" />
     <!-- 使用行业选择组件 -->
     <IndustrySelect ref="industryDialog" :max-selection="3" :industry-data="industryData"
       @confirm="handleIndustryConfirm" />
+
   </div>
 </template>
 
 <script setup name="Candidate">
-import { Search } from '@element-plus/icons-vue'
+import PostSelect from '@/components/PostSelect'
+import IndustrySelect from '@/components/IndustrySelect'
+import FileUpload from '@/components/FileUpload'
+
+import { Search, Document, View, Download } from '@element-plus/icons-vue'
 import { listCandidate, getCandidate, delCandidate, addCandidate, updateCandidate } from "@/api/system/candidate"
 import { getAllPosts } from "@/api/system/talentPost"
+import { getAllIndustries } from "@/api/system/talentIndustry"
+import { previewFile, signedUrl } from "@/api/tool/file"
 
 const { proxy } = getCurrentInstance()
 const { education } = proxy.useDict('education')
 
+const fileStorage = ref(import.meta.env.VITE_APP_FILE_STORAGE)
 const candidateList = ref([])
 const open = ref(false)
+const resumeOpen = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
@@ -168,22 +250,50 @@ const data = reactive({
     phoneNumber: null,
     email: null,
     highestEdu: null,
-    expectedSalary: null,
     post: null,
     skillTags: null,
     resumeUrl: null,
+    params: {
+      expectedSalaryStart: 0,
+      expectedSalaryEnd: 0
+    }
   },
   rules: {
     name: [
-      { required: true, message: "候选人姓名不能为空", trigger: "blur" }
+      { required: true, message: "候选人姓名不能为空", trigger: "blur" },
+      {
+        pattern: /^[\u4e00-\u9fa5a-zA-Z]([\u4e00-\u9fa5a-zA-Z ]*[\u4e00-\u9fa5a-zA-Z])?$/,
+        message: "姓名不符合规范 (不能出现特殊字符或者连续空格)",
+        trigger: "blur"
+      }
     ],
     phoneNumber: [
-      { required: true, message: "手机号码不能为空", trigger: "blur" }
+      { required: true, message: "手机号码不能为空", trigger: "blur" },
+      { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的中国手机号码格式", trigger: "blur" }
+    ],
+    expectedSalary: [
+      { required: true, message: "期望年薪不能为空", trigger: "blur" },
+      { type: 'number', min: 1, message: '期望年薪必须大于1', trigger: 'blur' },
+      { type: 'number', max: 10000, message: '期望年薪不能超过1亿', trigger: 'blur' }
     ],
   }
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+// 处理期望年薪起始值变化
+const handleSalaryStartChange = (val) => {
+  if (queryParams.value.params.expectedSalaryEnd !== null && val > queryParams.value.params.expectedSalaryEnd) {
+    queryParams.value.params.expectedSalaryEnd = val
+  }
+}
+
+// 处理期望年薪结束值变化
+const handleSalaryEndChange = (val) => {
+  if (queryParams.value.params.expectedSalaryStart !== null && val < queryParams.value.params.expectedSalaryStart) {
+    queryParams.value.params.expectedSalaryStart = val
+  }
+}
 
 /** 查询人才库列表 */
 function getList() {
@@ -198,6 +308,7 @@ function getList() {
 // 取消按钮
 function cancel() {
   open.value = false
+  resumeOpen.value = false
   reset()
 }
 
@@ -209,9 +320,11 @@ function reset() {
     phoneNumber: null,
     email: null,
     highestEdu: null,
-    expectedSalary: null,
-    post: null,
+    expectedSalary: 0,
+    industryList: null,
+    postList: null,
     skillTags: null,
+    resumeFilename: null,
     resumeUrl: null,
     deptId: null,
     createBy: null,
@@ -221,6 +334,9 @@ function reset() {
     remark: null
   }
   proxy.resetForm("candidateRef")
+  // 清空已选职位和行业
+  selectedPosts.value = []
+  selectedIndustries.value = []
 }
 
 /** 搜索按钮操作 */
@@ -232,6 +348,9 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  // 显式重置期望年薪的值为0
+  queryParams.value.params.expectedSalaryStart = 0
+  queryParams.value.params.expectedSalaryEnd = 0
   handleQuery()
 }
 
@@ -254,10 +373,23 @@ function handleUpdate(row) {
   reset()
   const _id = row.id || ids.value
   getCandidate(_id).then(response => {
-    form.value = response.data.data
+    form.value = response.data
     open.value = true
     title.value = "修改人才库"
   })
+}
+
+/** 简历按钮操作 */
+function handleUpload(row) {
+  const _id = row.id
+  resumeOpen.value = true
+  title.value = "候选人预览"
+  // 从列表中获取数据，将resumeFilename和resumeUrl赋给fileList
+  let candidate = candidateList.value.filter(item => item.id === _id)
+
+  if (candidate.resumeFilename && candidate.resumeUrl) {
+    fileList.value = [{ name: candidate.resumeFilename, url: candidate.resumeUrl }]
+  }
 }
 
 /** 提交按钮 */
@@ -277,6 +409,7 @@ function submitForm() {
           getList()
         })
       }
+
     }
   })
 }
@@ -301,13 +434,10 @@ function handleExport() {
 
 getList()
 
-import PostSelect from '@/components/PostSelect'
-
+/** 职位选择器逻辑 */
 const postDialog = ref(null)
-
 // 职位数据（可以从后端API获取）
 const postData = ref([])
-
 // 已选职位ID列表
 const selectedPosts = ref([])
 
@@ -325,7 +455,7 @@ const selectedPostNames = computed(() => {
 })
 
 // 打开职位选择对话框
-const openPostDialog = () => {
+function openPostDialog() {
   if (postData.value.length === 0) {
     getAllPosts().then(response => {
       postData.value = response.data
@@ -335,20 +465,18 @@ const openPostDialog = () => {
 }
 
 // 处理职位选择确认事件
-const handlePostConfirm = (selectedIds) => {
+
+function handlePostConfirm(selectedIds) {
   selectedPosts.value = selectedIds
   // 这里可以添加其他逻辑，如保存到后端等
   // 遍历selectedPostNames，提取name作为数组
-  form.value.post = selectedPostNames.value.map(post => post.name)
+  form.value.postList = selectedPostNames.value.map(post => post.name)
 }
 
-import IndustrySelect from '@/components/IndustrySelect'
-
+/** 行业选择器逻辑 */
 const industryDialog = ref(null)
-
 // 行业数据（可以从后端API获取）
 const industryData = ref([])
-
 // 已选行业ID列表
 const selectedIndustries = ref([])
 
@@ -364,150 +492,164 @@ const selectedIndustryNames = computed(() => {
 })
 
 // 打开职位选择对话框
-const openIndustryDialog = () => {
+function openIndustryDialog() {
   if (industryData.value.length === 0) {
-    // getAllPosts().then(response => {
-    //   industryData.value = response.data
-    // })
-    industryData.value = [
-      {
-        id: 1,
-        name: '全部行业',
-        industries: [
-          { id: 101, name: '全部行业' }
-        ]
-      },
-      {
-        id: 2,
-        name: 'IT/互联网/游戏',
-        industries: [
-          { id: 201, name: '互联网' },
-          { id: 202, name: '计算机软件' },
-          { id: 203, name: '在线教育' },
-          { id: 204, name: '网络/信息安全' },
-          { id: 205, name: 'IT服务' },
-          { id: 206, name: '游戏' },
-          { id: 207, name: '电子商务' },
-          { id: 208, name: '云计算/大数据' },
-          { id: 209, name: '在线社交/媒体' }
-        ]
-      },
-      {
-        id: 3,
-        name: '电子/通信/半导体',
-        industries: [
-          { id: 301, name: '电子技术' },
-          { id: 302, name: '半导体' },
-          { id: 303, name: '集成电路' },
-          { id: 304, name: '通信设备' },
-          { id: 305, name: '5G技术' }
-        ]
-      },
-      {
-        id: 4,
-        name: '房地产/建筑',
-        industries: [
-          { id: 401, name: '房地产开发' },
-          { id: 402, name: '建筑设计' },
-          { id: 403, name: '建筑施工' },
-          { id: 404, name: '物业管理' },
-          { id: 405, name: '装修装饰' }
-        ]
-      },
-      {
-        id: 5,
-        name: '金融',
-        industries: [
-          { id: 501, name: '银行' },
-          { id: 502, name: '保险' },
-          { id: 503, name: '基金/证券/期货' },
-          { id: 504, name: '投资管理' },
-          { id: 505, name: '金融科技' },
-          { id: 506, name: '信托' },
-          { id: 507, name: '融资租赁' }
-        ]
-      },
-      {
-        id: 6,
-        name: '消费品',
-        industries: [
-          { id: 601, name: '食品饮料' },
-          { id: 602, name: '服装纺织' },
-          { id: 603, name: '家居用品' },
-          { id: 604, name: '美妆个护' },
-          { id: 605, name: '珠宝首饰' }
-        ]
-      },
-      {
-        id: 7,
-        name: '医疗健康',
-        industries: [
-          { id: 701, name: '医药制造' },
-          { id: 702, name: '医疗器械' },
-          { id: 703, name: '医疗服务' },
-          { id: 704, name: '健康管理' },
-          { id: 705, name: '生物技术' }
-        ]
-      },
-      {
-        id: 8,
-        name: '汽车',
-        industries: [
-          { id: 801, name: '汽车制造' },
-          { id: 802, name: '新能源汽车' },
-          { id: 803, name: '汽车零部件' },
-          { id: 804, name: '汽车销售' },
-          { id: 805, name: '汽车服务' }
-        ]
-      },
-      {
-        id: 9,
-        name: '机械/制造',
-        industries: [
-          { id: 901, name: '机械制造' },
-          { id: 902, name: '工业自动化' },
-          { id: 903, name: '智能制造' },
-          { id: 904, name: '仪器仪表' },
-          { id: 905, name: '金属加工' }
-        ]
-      },
-      {
-        id: 10,
-        name: '教育培训/科研',
-        industries: [
-          { id: 1001, name: 'K12教育' },
-          { id: 1002, name: '高等教育' },
-          { id: 1003, name: '职业教育' },
-          { id: 1004, name: '语言培训' },
-          { id: 1005, name: '科研机构' }
-        ]
-      },
-      {
-        id: 11,
-        name: '专业服务',
-        industries: [
-          { id: 1101, name: '法律咨询' },
-          { id: 1102, name: '会计审计' },
-          { id: 1103, name: '管理咨询' },
-          { id: 1104, name: '人力资源' },
-          { id: 1105, name: '广告营销' }
-        ]
-      }
-    ]
+    getAllIndustries().then(response => {
+      industryData.value = response.data
+    })
   }
   industryDialog.value.open(selectedIndustries.value)
 }
 
 // 处理行业选择确认事件
-const handleIndustryConfirm = (selectedIds) => {
-  console.log(selectedIds);
-  
+function handleIndustryConfirm(selectedIds) {
   selectedIndustries.value = selectedIds
   // 这里可以添加其他逻辑，如保存到后端等
   // 遍历selectedIndustryNames，提取name作为数组
-  console.log(selectedIndustryNames.value);
-  
-  form.value.industry = selectedIndustryNames.value.map(industry => industry.name)
+  form.value.industryList = selectedIndustryNames.value.map(industry => industry.name)
 }
+
+/** 文件上传逻辑 */
+const fileList = ref([])
+const previewUrl = ref('')
+
+// 获取文件名称
+function getFileName(name) {
+  if (!name) return ''
+  // 如果是url那么取最后的名字 如果不是直接返回
+  if (name.lastIndexOf("/") > -1) {
+    return name.slice(name.lastIndexOf("/") + 1)
+  } else {
+    return name
+  }
+}
+
+// 预览文件 - 使用后端接口
+function handlePreviewFile(file) {
+  if (!file.url) {
+    proxy.$modal.msgError('文件URL不存在')
+    return
+  }
+
+  proxy.$modal.loading('正在加载预览...')
+
+  // 调用后端预览接口
+  previewFile(file.url, fileStorage.value).then(response => {
+    proxy.$modal.closeLoading()
+    // 如果后端返回预览URL，在新窗口打开
+    if (response.data) {
+      window.open(response.data, '_blank')
+    } else {
+      // 如果没有预览URL，尝试直接打开文件
+      window.open(file.url, '_blank')
+    }
+  }).catch(error => {
+    proxy.$modal.closeLoading()
+    console.error('预览失败:', error)
+    proxy.$modal.msgError('文件预览失败，请稍后重试')
+  })
+}
+
+// 下载文件
+function handleDownloadFile(file) {
+  // 调用后端下载接口
+  signedUrl(file.url, fileStorage.value).then(response => {
+    proxy.$modal.closeLoading()
+    // 如果后端返回签名URL，在新窗口打开
+    if (response.data) {
+      window.open(response.data, '_blank')
+    } else {
+      // 如果没有签名URL，尝试直接打开文件
+      window.open(file.url, '_blank')
+    }
+  }).catch(error => {
+    proxy.$modal.closeLoading()
+    console.error('下载失败:', error)
+    proxy.$modal.msgError('文件失败失败，请稍后重试')
+  })
+}
+
+// 更新简历
+function updateResume() {
+  if (fileList.value.length > 0) {
+    proxy.$modal.msgSuccess('简历更新成功')
+    resumeOpen.value = false
+  } else {
+    proxy.$modal.msgWarning('请先上传文件')
+  }
+}
+
 </script>
-<style scoped></style>
+
+<style lang="scss" scoped>
+.file-preview-container {
+  margin-top: 20px;
+
+  .file-preview-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #f1f3f4;
+      border-color: #dee2e6;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+
+      .file-icon {
+        font-size: 24px;
+        color: #409eff;
+        margin-right: 12px;
+      }
+
+      .file-details {
+        flex: 1;
+
+        .file-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: #303133;
+          word-break: break-all;
+        }
+      }
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+
+      .el-button {
+        padding: 4px 8px;
+        font-size: 12px;
+
+        .el-icon {
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .file-preview-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    .file-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+}
+</style>

@@ -157,7 +157,7 @@
       </template>
     </el-dialog>
     <!-- 上传简历对话框 -->
-    <el-dialog :title="title" v-model="resumeOpen" width="800px" append-to-body>
+    <el-dialog :title="title" v-model="resumeOpen" width="800px" :before-close="resumeDialogClose" append-to-body>
       <FileUpload ref="fileUpload" v-model="fileList" :limit="1" :data="{ storageType: fileStorage }"
         :isShowTip="true" />
 
@@ -221,10 +221,10 @@ import IndustrySelect from '@/components/IndustrySelect'
 import FileUpload from '@/components/FileUpload'
 
 import { Search, Document, View, Download } from '@element-plus/icons-vue'
-import { listCandidate, getCandidate, delCandidate, addCandidate, updateCandidate } from "@/api/system/candidate"
+import { listCandidate, getCandidate, delCandidate, addCandidate, updateCandidate, updateCandidateResume } from "@/api/system/candidate"
 import { getAllPosts } from "@/api/system/talentPost"
 import { getAllIndustries } from "@/api/system/talentIndustry"
-import { previewFile, signedUrl } from "@/api/tool/file"
+import { previewFile, signedUrl, deleteFile } from "@/api/tool/file"
 
 const { proxy } = getCurrentInstance()
 const { education } = proxy.useDict('education')
@@ -240,6 +240,10 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+const resumeId = ref("")
+const fileList = ref([])
+const previewUrl = ref("")
 
 const data = reactive({
   form: {},
@@ -309,6 +313,8 @@ function getList() {
 function cancel() {
   open.value = false
   resumeOpen.value = false
+  resumeId.value = ""
+  deleteUploadFile()
   reset()
 }
 
@@ -381,14 +387,15 @@ function handleUpdate(row) {
 
 /** 简历按钮操作 */
 function handleUpload(row) {
-  const _id = row.id
+  resumeId.value = row.id
   resumeOpen.value = true
   title.value = "候选人预览"
   // 从列表中获取数据，将resumeFilename和resumeUrl赋给fileList
-  let candidate = candidateList.value.filter(item => item.id === _id)
-
-  if (candidate.resumeFilename && candidate.resumeUrl) {
-    fileList.value = [{ name: candidate.resumeFilename, url: candidate.resumeUrl }]
+  let candidate = candidateList.value.filter(item => item.id === resumeId.value)
+  if (candidate && candidate.length > 0) {
+    if (candidate[0].resumeFilename && candidate[0].resumeUrl) {
+      fileList.value = [{ name: candidate[0].resumeFilename, url: candidate[0].resumeUrl }]
+    }
   }
 }
 
@@ -510,8 +517,7 @@ function handleIndustryConfirm(selectedIds) {
 }
 
 /** 文件上传逻辑 */
-const fileList = ref([])
-const previewUrl = ref('')
+
 
 // 获取文件名称
 function getFileName(name) {
@@ -571,11 +577,43 @@ function handleDownloadFile(file) {
 
 // 更新简历
 function updateResume() {
+  let resumeFilename = null
+  let resumeUrl = null
   if (fileList.value.length > 0) {
+    resumeFilename = fileList.value[0].name
+    resumeUrl = fileList.value[0].url
+  }
+  updateCandidateResume({
+    id: resumeId.value,
+    resumeFilename: resumeFilename,
+    resumeUrl: resumeUrl
+  }).then(res => {
+    getList()
     proxy.$modal.msgSuccess('简历更新成功')
-    resumeOpen.value = false
-  } else {
-    proxy.$modal.msgWarning('请先上传文件')
+  }).catch(error => {
+    console.error('更新失败:', error)
+    proxy.$modal.msgError('更新失败，请稍后重试')
+  })
+  resumeOpen.value = false
+  fileList.value = []
+  resumeId.value = ""
+}
+
+function resumeDialogClose() {
+  proxy.$modal.confirm('确认要关闭窗口吗？')
+    .then(() => {
+      deleteUploadFile()
+      resumeOpen.value = false
+      resumeId.value = ""
+    }).catch(() => {
+      // catch error
+    })
+}
+
+function deleteUploadFile() {
+  if (fileList.value && fileList.value.length > 0) {
+    deleteFile(fileList.value[0].url, fileStorage.value)
+    fileList.value = []
   }
 }
 

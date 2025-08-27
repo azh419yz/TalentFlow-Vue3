@@ -42,3 +42,12 @@ export function delCandidate(id) {
     method: 'delete'
   })
 }
+
+// 更新人才简历
+export function updateResume(data) {
+  return request({
+    url: '/system/talent/candidate/resume',
+    method: 'put',
+    data: data
+  })
+}

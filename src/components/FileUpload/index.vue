@@ -164,14 +164,16 @@ function handleUploadSuccess(res, file) {
 
 // 删除文件
 function handleDelete(index) {
-  deleteFile(fileList.value[index].url, props.data.storageType).then(res => {
-    if (res.code === 200) {
-      fileList.value.splice(index, 1)
-      emit("update:modelValue", fileList.value)
-    } else {
-      proxy.$modal.msgError(res.msg)
-    }
-  })
+  // deleteFile(fileList.value[index].url, props.data.storageType).then(res => {
+  //   if (res.code === 200) {
+  //     fileList.value.splice(index, 1)
+  //     emit("update:modelValue", fileList.value)
+  //   } else {
+  //     proxy.$modal.msgError(res.msg)
+  //   }
+  // })
+  fileList.value.splice(index, 1)
+  emit("update:modelValue", fileList.value)
 }
 
 // 上传结束处理

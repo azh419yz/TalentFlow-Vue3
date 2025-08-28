@@ -221,9 +221,9 @@ import IndustrySelect from '@/components/IndustrySelect'
 import FileUpload from '@/components/FileUpload'
 
 import { Search, Document, View, Download } from '@element-plus/icons-vue'
-import { listCandidate, getCandidate, delCandidate, addCandidate, updateCandidate, updateCandidateResume } from "@/api/system/candidate"
-import { getAllPosts } from "@/api/system/talentPost"
-import { getAllIndustries } from "@/api/system/talentIndustry"
+import { listCandidate, getCandidate, delCandidate, addCandidate, updateCandidate, updateCandidateResume } from "@/api/talent/candidate"
+import { getAllPosts } from "@/api/talent/post"
+import { getAllIndustries } from "@/api/talent/industry"
 import { previewFile, signedUrl, deleteFile } from "@/api/tool/file"
 
 const { proxy } = getCurrentInstance()
@@ -424,7 +424,21 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除人才库编号为"' + _ids + '"的数据项？').then(function () {
+
+  // 确保_ids是数组格式，方便统一处理
+  const idsArray = Array.isArray(_ids) ? _ids : [_ids]
+
+  // 从candidateList中查找与idsArray匹配的候选人名称
+  const names = candidateList.value
+    .filter(item => idsArray.includes(item.id))
+    .map(item => item.name)
+    .join('、')
+
+  const confirmMessage = idsArray.length === 1
+    ? `是否确认删除候选人"${names}"的信息？`
+    : `是否确认删除候选人[${names}]等${idsArray.length}条信息？`
+
+  proxy.$modal.confirm(confirmMessage).then(function () {
     return delCandidate(_ids)
   }).then(() => {
     getList()
